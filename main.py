@@ -13,7 +13,7 @@ class Movie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120))
     watched = db.Column(db.Boolean)
-    rating = db.Column(db.String(4))
+    rating = db.Column(db.String(5))
     
     # TODO: add a ratings column to the Movie table
 
