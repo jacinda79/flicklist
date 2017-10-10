@@ -13,14 +13,11 @@ class Movie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120))
     watched = db.Column(db.Boolean)
-    rating = db.Column(db.String(5))
-    
-    # TODO: add a ratings column to the Movie table
+    rating = db.Column(db.String(20))
 
     def __init__(self, name):
         self.name = name
         self.watched = False
-        self.rating = rating
 
     def __repr__(self):
         return '<Movie %r>' % self.name
@@ -38,9 +35,7 @@ def get_current_watchlist():
     return Movie.query.filter_by(watched=False).all()
 
 def get_watched_movies():
-    # For now, we are just pretending
-    # returns the list of movies the user has already watched and crossed off
-    return Movie.query.filter_by(watched=False).all()
+    return Movie.query.filter_by(watched=True).all()
 
 # Create a new route called rate_movie which handles a POST request on /rating-confirmation
 @app.route("/rating-confirmation", methods=['POST'])
@@ -58,10 +53,9 @@ def rate_movie():
         return redirect("/?error=" + error)
 
     # if we didn't redirect by now, then all is well
-    
-    # TODO: make a persistent change to the model so that you STORE the rating in the database
-    # (Note: the next TODO is in templates/ratings.html)
-    
+    movie.rating = rating
+    db.session.add(movie)
+    db.session.commit()
     return render_template('rating-confirmation.html', movie=movie, rating=rating)
 
 
@@ -79,11 +73,10 @@ def crossoff_movie():
     if not crossed_off_movie:
         return redirect("/?error=Attempt to watch a movie unknown to this database")
 
+    # if we didn't redirect by now, then all is well
     crossed_off_movie.watched = True
     db.session.add(crossed_off_movie)
     db.session.commit()
-    
-    # if we didn't redirect by now, then all is well
     return render_template('crossoff.html', crossed_off_movie=crossed_off_movie)
 
 @app.route("/add", methods=['POST'])
