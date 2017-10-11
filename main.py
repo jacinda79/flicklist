@@ -58,11 +58,22 @@ def register():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
+        verify = request.form['verify']
         if not is_email(email):
             flash('zoiks! "' + email + '" does not seem like an email address')
             return redirect('/register')
+
         # TODO 1: validate that form value of 'verify' matches password
+        if password != verify:
+            flash('Cannot create account: passwords must match!')
+            return redirect('/register')
+
         # TODO 2: validate that there is no user with that email already
+        email_db_count = User.query.filter_by(email=email).count()
+        if email_db_count > 0:
+            flash('Cannot create account: email in use.')
+            return redirect('/register')
+
         user = User(email=email, password=password)
         db.session.add(user)
         db.session.commit()
@@ -83,6 +94,21 @@ def is_email(string):
         domain_dot_index = string.find('.', atsign_index)
         domain_dot_present = domain_dot_index >= 0
         return domain_dot_present
+
+@app.route("/login", methods=['POST', 'GET'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        user = User.query.filter_by(email=email).first()
+        if user and user.password == password:
+            session['email'] = email
+            flash("Logged in")
+            return redirect('/')
+        else:
+            flash('User password incorrect, or user does not exist', 'error')
+
+    return render_template('login.html')
 
 @app.route("/logout", methods=['POST'])
 def logout():
@@ -160,7 +186,7 @@ def index():
 #         It should contain 'register' and 'login'.
 @app.before_request
 def require_login():
-    if not ('user' in session or request.endpoint == 'register'):
+    if not ('user' in session or request.endpoint == 'register', 'login'):
         return redirect("/register")
 
 # In a real application, this should be kept secret (i.e. not on github)
